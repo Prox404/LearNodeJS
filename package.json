@@ -1,0 +1,26 @@
+{
+  "name": "learnnodejs",
+  "version": "1.0.0",
+  "description": "nodejs learning process from zero",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --inspect index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prox404/LearnNodeJS.git"
+  },
+  "author": "prox",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Prox404/LearnNodeJS/issues"
+  },
+  "homepage": "https://github.com/Prox404/LearnNodeJS#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0"
+  }
+}

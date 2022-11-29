@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const homeController = require('../app/controllers/HomeController');
+const siteController = require('../app/controllers/SideController');
 
 router.get('/', (req, res) => {
-    homeController.indexGET(req, res);
+    siteController.indexGET(req, res);
 })
 router.post('/', (req, res) => {
-    homeController.indexPOST(req, res);
+    siteController.indexPOST(req, res);
 })
 
 module.exports = router;

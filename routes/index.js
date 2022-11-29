@@ -1,7 +1,7 @@
-const home = require('./home');
+const site = require('./site');
 
 function route(app) {
-    app.use('/', home);
+    app.use('/', site);
 }
 
 module.exports = route

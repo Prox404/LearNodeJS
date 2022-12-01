@@ -1,3 +1,4 @@
+const verifyToken = require('../app/middlewares/verifyToken');
 const express = require('express');
 const router = express.Router();
 

@@ -11,13 +11,19 @@ app.use(express.raw());
 app.use(express.text());
 app.use(morgan('combined'));
 
+const dotenv = require('dotenv');
 const db = require('./config/db');
+
+// get config vars
+dotenv.config();
 
 // Connect to DB
 db.connect();
 
+// Routes init
 route(app);
 
+
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`App listening on port ${port}`)
 })

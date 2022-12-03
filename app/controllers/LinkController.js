@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 
 const Link = require('../models/Link/Link');
+const User = require('../models/User/User');
 const jwt = require('jsonwebtoken');
 
 class LinkController {
@@ -8,10 +9,12 @@ class LinkController {
     // check isset short link
 
     async checkShortLink(shortLink) {
-        const isset = await Link.findOne({ short_link: shortLink });
+        const isset = await Link.findOne({ shortLink: shortLink });
         if (isset) {
+            console.log('isset');
             return true;
         }
+        console.log('not isset');
         return false;
     }
 
@@ -42,19 +45,28 @@ class LinkController {
             return res.status(400).send({ error: "Data not formatted properly" });
         }
         try {
-            const token = req.header("authorization");
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
             const verified = jwt.verify(token, process.env.TOKEN_SECRET);
             const user = await User.findOne({ _id: verified._id });
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
             }
-            const link = new Link();
-            link.link = body.link;
-            link.short_link = this.checkShortLink(body.short_link) ? body.shortLink : await this.randomString();
-            link.user_id = user._id;
-            link.password = body.password ? body.password : '';
-            await link.save();
-            res.status(200).send({ link });
+            this.checkShortLink(body.short_link).then(async (isset)  => {
+                if (isset) {
+                    return res.status(400).send({ error: "Short link already exists" });
+                } else {
+                    const link = new Link();
+                    link.link = body.link;
+                    link.short_link = body.short_link !== '' ? body.short_link : await this.randomString();
+                    link.user_id = user._id;
+                    link.password = body.password ? body.password : '';
+                    await link.save();
+                    res.status(200).send({ link });
+                }
+            });
+
+
         } catch (error) {
             console.error(error);
             res.status(400).send({ error });

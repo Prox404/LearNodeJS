@@ -22,8 +22,8 @@ class UserController {
                 return res.status(400).send({ error: "Password is not correct" });
             }
             const token = jwt.sign({_id: user._id}, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 }); 
-            const {password, ...info} = user._doc;
-            res.status(200).send({ info, token });
+            const {password, ...data} = user._doc;
+            res.status(200).send({ data, token });
         } catch (error) {
             console.error(error);
             res.status(400).send({ error });

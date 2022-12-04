@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const ObjectId = require('mongoose').Types.ObjectId;
 
 const Link = require('../models/Link/Link');
 const User = require('../models/User/User');
@@ -58,7 +59,7 @@ class LinkController {
     async store(req, res) {
         console.log("call store");
         const body = req.body;
-        if (!(body.link && req.header("authorization"))) {
+        if (!(body.link && req.header('authorization'))) {
             return res.status(400).send({ error: "Data not formatted properly" });
         }
         try {
@@ -98,6 +99,106 @@ class LinkController {
             console.error(error);
             res.status(400).send({ error });
         }
+    }
+
+    // [GET] show/:shortLink
+    async show(req, res) {
+        console.log("call show");
+        const shortLink = req.params.shortLink;
+        if (!(shortLink)) {
+            return res.status(400).send({ error: "Data not formatted properly" });
+        }
+        try {
+            const links = await Link.findOne({ short_link: shortLink });
+            if (!links) {
+                return res.status(400).send({ error: "Link not found" });
+            }
+            if (links.password != '') {
+                links.password = true;
+                const { _id, link, __v, ...data } = links._doc;
+                res.status(200).send({ data });
+            } else {
+                links.password = false;
+                const { _id, __v, ...data } = links._doc;
+                res.status(200).send({ data });
+            }
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
+
+    // [POST] get/:shortLink
+    async showDetails(req, res) {
+        console.log("call show details");
+        if (req.header('authorization')) {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }
+        }
+        const shortLink = req.params.shortLink;
+        const body = req.body;
+        console.log("body: ", body);
+        if (!(shortLink && body.password)) {
+            return res.status(400).send({ error: "Data not formatted properly" });
+        }
+        try {
+            const links = await Link.findOne({ short_link: shortLink });
+            if (!links) {
+                return res.status(400).send({ error: "Link not found" });
+            }
+            const validPass = body.password === links.password;
+            if (!validPass) {
+                return res.status(400).send({ error: "Invalid Password" });
+            }
+            const { _id, __v, ...data } = links._doc;
+            res.status(200).send({ data });
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
+
+    // [POST] destroy/:shortLink
+
+    async destroy(req, res) {
+        console.log("call destroy");
+        const shortLink = req.params.shortLink;
+        if (!(shortLink)) {
+            return res.status(400).send({ error: "Data not formatted properly" });
+        }
+        if (req.header('authorization')) {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }else{
+                try {
+                    const links = await Link.findOne({ short_link: shortLink });
+                    if (!links) {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                    if(links.user_id.equals(user._id) === false){
+                        return res.status(400).send({ error: "You don't have permission to delete this link" });
+                    }else{
+                        await Link.deleteOne({ short_link: shortLink });
+                        res.status(200).send({ message: "Delete successfully" });
+                    }   ;
+                } catch (error) {
+                    console.error(error);
+                    res.status(400).send({ error });
+                }
+            }
+        }else{
+            return res.status(400).send({ error: "authorization not found" });
+        }
+        
     }
 }
 

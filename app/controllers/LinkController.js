@@ -163,6 +163,48 @@ class LinkController {
         }
     }
 
+    // [POST] update/:shortLink
+
+    async update(req, res) {
+        console.log("call update");
+        const shortLink = req.params.shortLink;
+        const body = req.body;
+        if (!(shortLink && body.link && req.header('authorization'))) {
+            return res.status(400).send({ error: "Data not formatted properly" });
+        }
+        try {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }
+            const isset = await this.checkShortLink(body.short_link).then((isset) => {
+                if (isset) {
+                    return true;
+                }
+                return false;
+            });
+            if (isset) {
+                return res.status(400).send({ error: "Short link already exists" });
+            } else {
+                const link = await Link.findOneAndUpdate({ short_link: shortLink }, {
+                    link: body.link,
+                    short_link: body.short_link,
+                    password: body.password ? body.password : ''
+                }, { new: true });
+                if (!link) {
+                    return res.status(400).send({ error: "Link not found" });
+                }
+                res.status(200).send({ link });
+            }
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
+
     // [POST] destroy/:shortLink
 
     async destroy(req, res) {

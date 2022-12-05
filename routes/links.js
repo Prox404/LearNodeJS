@@ -21,6 +21,12 @@ router.post('/show/:shortLink', async (req, res) => {
     LinkController.showDetails(req, res);
 });
 
+// update link
+
+router.put('/update/:shortLink', verifyToken, async (req, res) => {
+    LinkController.update(req, res);
+});
+
 // destroy link
 
 router.delete('/destroy/:shortLink', async (req, res) => {

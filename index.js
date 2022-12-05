@@ -24,6 +24,6 @@ db.connect();
 route(app);
 
 
-app.listen(port, () => {
+app.listen(port || 8000, () => {
   console.log(`App listening on port ${process.env.MONGOPORT || 5500}`)
 })

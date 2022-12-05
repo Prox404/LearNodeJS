@@ -42,8 +42,8 @@ class UserController {
         user.password = await bcrypt.hash(user.password, salt);
         try {
             await user.save();
-            user.populated('user' , 'password');
-            res.status(200).send({ user });
+            const {password, role, __v, ...data} = user._doc;
+            res.status(200).send({ data });
         } catch (error) {
             res.status(400).send({ error });
         }

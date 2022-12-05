@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 async function connect() {
     try {
-        await mongoose.connect('mongodb://localhost:27017/shortenLink_dev',{
+        await mongoose.connect(process.env.CONNECT_URL,{
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });

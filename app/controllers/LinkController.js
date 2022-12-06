@@ -163,6 +163,58 @@ class LinkController {
         }
     }
 
+    // [GET] /get get all user link
+
+    async getAll(req, res) {
+        console.log("call getAll");
+        try {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }
+            const data = await Link.find({ user_id: user._id });
+            if (!data) {
+                return res.status(400).send({ error: "Link not found" });
+            }
+            res.status(200).send({ data });
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
+
+    // [GET] /search get link by id
+
+    async search(req, res) {
+        console.log("call search");
+        const id = req.query.q;
+        console.log(req.query);
+        if (!(id)) {
+            return res.status(400).send({ error: "Data not formatted properly" });
+        }
+        try {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }
+            const data = await Link.find({ short_link: RegExp(id) });
+            console.log({ short_link: `/${id}/` });
+            if (!data) {
+                return res.status(400).send({ error: "Link not found" });
+            }
+            res.status(200).send({ data });
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
+
     // [POST] update/:shortLink
 
     async update(req, res) {

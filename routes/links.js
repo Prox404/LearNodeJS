@@ -21,6 +21,18 @@ router.post('/show/:shortLink', async (req, res) => {
     LinkController.showDetails(req, res);
 });
 
+//get All Users link
+
+router.get('/get', verifyToken, async (req, res) => {
+    LinkController.getAll(req, res);
+});
+
+//search links
+
+router.get('/search', verifyToken, async (req, res) => {
+    LinkController.search(req, res);
+});
+
 // update link
 
 router.put('/update/:shortLink', verifyToken, async (req, res) => {

@@ -8,13 +8,13 @@ class HomeController {
 
     indexGET(req, res) {
         console.log(req.query)
-        return res.send(req.query.q ? req.query.q : 'no query');
+        return res.send(JSON.stringify("This is ShortURL API"));
     }
 
     // [POST] /
     indexPOST(req, res) {
         console.log(req.body)
-        return res.send(req.body ? req.body : 'no query');
+        return res.send(JSON.stringify("This is ShortURL API"));
     }
 
     // app.post('/', multParse.fields(

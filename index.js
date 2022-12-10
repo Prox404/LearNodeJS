@@ -2,7 +2,7 @@ const express = require('express')
 const morgan = require('morgan')
 
 const app = express()
-const port = process.env.PORT || 5500
+const port = process.env.PORT || 3000
 const route = require('./routes/')
 
 app.use(express.json());
@@ -24,6 +24,6 @@ db.connect();
 route(app);
 
 
-app.listen(port || 8000, () => {
-  console.log(`App listening on port ${process.env.PORT || 5500}`)
+app.listen(port || 3000, () => {
+  console.log(`App listening on port ${process.env.PORT || 3000}`)
 })

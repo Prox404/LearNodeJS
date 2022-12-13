@@ -175,7 +175,8 @@ class LinkController {
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
             }
-            const data = await Link.find({ user_id: user._id });
+            const sort = { createdAt: -1 };
+            const data = await Link.find({ user_id: user._id }).sort(sort);
             if (!data) {
                 return res.status(400).send({ error: "Link not found" });
             }

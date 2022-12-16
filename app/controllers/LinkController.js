@@ -131,18 +131,9 @@ class LinkController {
     // [POST] get/:shortLink
     async showDetails(req, res) {
         console.log("call show details");
-        if (req.header('authorization')) {
-            const authHeader = req.headers['authorization']
-            const token = authHeader && authHeader.split(' ')[1]
-            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
-            const user = await User.findOne({ _id: verified._id });
-            if (!user) {
-                return res.status(400).send({ error: "User not found" });
-            }
-        }
         const shortLink = req.params.shortLink;
         const body = req.body;
-        console.log("body: ", body);
+        // console.log("body: ", body);
         if (!(shortLink && body.password)) {
             return res.status(400).send({ error: "Data not formatted properly" });
         }

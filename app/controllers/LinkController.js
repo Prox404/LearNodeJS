@@ -298,11 +298,13 @@ class LinkController {
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
             }
-            const data = [];
+            const data = {};
             const numberLinks = await Link.count();
             const numberUser = await User.count();
             const numberLinkOfUser = await Link.count({ user_id: user._id });
-            data.push({ numberLinks, numberUser, numberLinkOfUser });
+            data.numberLinks = numberLinks;
+            data.numberUser = numberUser;
+            data.numberLinkOfUser = numberLinkOfUser;
             res.status(200).send({ data });
         } catch (error) {
             console.error(error);

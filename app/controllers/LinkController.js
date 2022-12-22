@@ -286,6 +286,29 @@ class LinkController {
         }
         
     }
+
+    // [GET] /overview
+    async overview(req, res) {
+        console.log("call overview");
+        try {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }
+            const data = [];
+            const numberLinks = await Link.count();
+            const numberUser = await User.count();
+            const numberLinkOfUser = await Link.count({ user_id: user._id });
+            data.push({ numberLinks, numberUser, numberLinkOfUser });
+            res.status(200).send({ data });
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
 }
 
 module.exports = new LinkController;

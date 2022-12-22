@@ -45,5 +45,11 @@ router.delete('/destroy/:shortLink', async (req, res) => {
     LinkController.destroy(req, res);
 });
 
+//get overview
+
+router.get('/overview', async (req, res) => {
+    LinkController.overview(req, res);
+});
+
 
 module.exports = router;

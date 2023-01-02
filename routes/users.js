@@ -14,4 +14,8 @@ router.post('/login', async (req, res) => {
     userController.login(req, res);
 });
 
+router.get('/profile', verifyToken, async (req, res) => {
+    userController.profile(req, res);
+});
+
 module.exports = router;

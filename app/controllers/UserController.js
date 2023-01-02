@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 
 const User = require('../models/User/User');
+const Link = require('../models/Link/Link');
 const jwt = require('jsonwebtoken');
 
 class UserController {
@@ -29,7 +30,6 @@ class UserController {
             res.status(400).send({ error });
         }
     }
-
     // [POST] /signup
 
     async signup(req, res) {
@@ -48,6 +48,28 @@ class UserController {
             res.status(400).send({ error });
         }
     }
+
+    async profile(req, res) {
+        const authorization = req.headers['authorization'];
+        const token = authorization && authorization.split(' ')[1];
+        try {
+            
+            let user = jwt.verify(token, process.env.TOKEN_SECRET);
+            user = await User.findOne({ _id: user._id }).then(user => {
+                let links = Link.find({ user_id: user._id }).then(link => {
+                    console.log(link);
+                    const {password, role, __v, ...data} = user._doc;
+                    data.link = link;
+                    res.status(200).send({ data });
+                });
+            });
+        } catch (e) {
+            console.error(e);
+            res.status(400).send({ error: e });
+        }
+
+    }
+
 }
 
 module.exports = new UserController;

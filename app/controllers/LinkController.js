@@ -161,17 +161,29 @@ class LinkController {
         try {
             const authHeader = req.headers['authorization']
             const token = authHeader && authHeader.split(' ')[1]
+            const page = req.query.page || 1;
+            const perPage = 10;
+            let pages = 0;
+            let total = 0;
             const verified = jwt.verify(token, process.env.TOKEN_SECRET);
             const user = await User.findOne({ _id: verified._id });
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
             }
             const sort = { createdAt: -1 };
-            const data = await Link.find({ user_id: user._id }).sort(sort);
+            const data = await Link
+            .find({ user_id: user._id })
+            .limit(perPage)
+            .skip(perPage * page - perPage)
+            .sort(sort);
+
+            total = await Link.countDocuments({ user_id: user._id });
+            pages = Math.ceil(total / perPage);
+
             if (!data) {
                 return res.status(400).send({ error: "Link not found" });
             }
-            res.status(200).send({ data });
+            res.status(200).send({ data, 'current': page, pages, total });
         } catch (error) {
             console.error(error);
             res.status(400).send({ error });

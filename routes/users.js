@@ -18,4 +18,8 @@ router.get('/profile', verifyToken, async (req, res) => {
     userController.profile(req, res);
 });
 
+router.put('/update', verifyToken, async (req, res) => {
+    userController.update(req, res);
+});
+
 module.exports = router;

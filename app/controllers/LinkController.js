@@ -91,6 +91,7 @@ class LinkController {
                 link.user_id = user._id;
                 link.short_link = body.short_link;
                 link.password = body.password ? body.password : '';
+                link.watch = 0;
                 console.log(link);
                 await link.save();
                 res.status(200).send({ link });
@@ -121,7 +122,9 @@ class LinkController {
                 const { _id, link, __v, ...data } = links._doc;
                 res.status(200).send({ data });
             } else {
+
                 links.password = false;
+                await Link.findOneAndUpdate({ _id: links._id }, { watch: links.watch + 1 });
                 const { _id, __v, ...data } = links._doc;
                 res.status(200).send({ data });
             }
@@ -175,7 +178,7 @@ class LinkController {
             }
             const sort = { createdAt: -1 };
             const data = await Link
-                .find({ user_id: user._id })
+                .find({ user_id: user._id }, { __v: 0, user_id: 0 })
                 .limit(perPage)
                 .skip(perPage * page - perPage)
                 .sort(sort);

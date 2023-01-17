@@ -4,6 +4,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Link = require('../models/Link/Link');
 const User = require('../models/User/User');
 const jwt = require('jsonwebtoken');
+const { default: mongoose } = require('mongoose');
 
 class LinkController {
 
@@ -92,6 +93,7 @@ class LinkController {
                 link.short_link = body.short_link;
                 link.password = body.password ? body.password : '';
                 link.watch = 0;
+                link.privacy = body.privacy ? body.privacy : 'public';
                 console.log(link);
                 await link.save();
                 res.status(200).send({ link });
@@ -122,11 +124,28 @@ class LinkController {
                 const { _id, link, __v, ...data } = links._doc;
                 res.status(200).send({ data });
             } else {
-
                 links.password = false;
-                await Link.findOneAndUpdate({ _id: links._id }, { watch: links.watch + 1 });
-                const { _id, __v, ...data } = links._doc;
-                res.status(200).send({ data });
+                if (links.privacy == 'private') {
+                    const authHeader = req.headers['authorization'];
+                    const token = authHeader && authHeader.split(' ')[1];
+                    if (token == null) {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                    const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+                    const user = await User.findOne({ _id: verified._id });
+                    if (!user) {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                    if (user._id.equals(mongoose.Types.ObjectId(links.user_id))) {
+                        const { _id, __v, ...data } = links._doc;
+                        res.status(200).send({ data });
+                    } else {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                }else{
+                    const { _id, __v, ...data } = links._doc;
+                    res.status(200).send({ data });
+                }
             }
         } catch (err) {
             console.error(err);

@@ -14,10 +14,10 @@ var cors = require('cors')
 const dotenv = require('dotenv');
 const db = require('./config/db');
 
-const port = process.env.PORT || 3000
 
 // get config vars
 dotenv.config();
+const port = process.env.PORT || 3000
 
 // Connect to DB
 db.connect();

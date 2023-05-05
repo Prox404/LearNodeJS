@@ -22,4 +22,8 @@ router.put('/update', verifyToken, async (req, res) => {
     userController.update(req, res);
 });
 
+router.post('/auth/facebook', async (req, res) => {
+    userController.facebookAuth(req, res);
+});
+
 module.exports = router;

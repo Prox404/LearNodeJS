@@ -95,6 +95,42 @@ class UserController {
         }
     }
 
+    async facebookAuth(req, res) {
+        const body = req.body;
+        if (!(body.email && body.id && body.name)) {
+            return res.status(400).send({ error: "Data not formatted properly" });
+        }
+        try {
+            const { email, id, name, picture } = body;
+            const newUser = await User.findOne({ email: email});
+
+            if (newUser) {
+                console.log("User already exists");
+                console.log(newUser);
+                const token = jwt.sign({_id: newUser._id}, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 * 365 }); 
+                const {password, role, ...data} = newUser._doc;
+                res.status(200).send({ data, token });
+            }else{
+                console.log("Create new user");
+                const user = new User({
+                    email : email,
+                    password : id,
+                    username : name,
+                    avatar : picture,
+                });
+    
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(user.password, salt);
+                await user.save();
+                const token = jwt.sign({_id: user._id}, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 });
+                const {password, role, __v, ...data} = user._doc;
+                res.status(200).send({ data, token });
+            }
+        } catch (error) {
+            res.status(400).send({ error });
+        }
+    }
+
 }
 
 module.exports = new UserController;

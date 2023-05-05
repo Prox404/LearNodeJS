@@ -14,4 +14,12 @@ router.post('/login', async (req, res) => {
     userController.login(req, res);
 });
 
+router.get('/profile', verifyToken, async (req, res) => {
+    userController.profile(req, res);
+});
+
+router.put('/update', verifyToken, async (req, res) => {
+    userController.update(req, res);
+});
+
 module.exports = router;

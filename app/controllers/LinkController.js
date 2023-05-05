@@ -4,6 +4,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Link = require('../models/Link/Link');
 const User = require('../models/User/User');
 const jwt = require('jsonwebtoken');
+const { default: mongoose } = require('mongoose');
 
 class LinkController {
 
@@ -91,6 +92,8 @@ class LinkController {
                 link.user_id = user._id;
                 link.short_link = body.short_link;
                 link.password = body.password ? body.password : '';
+                link.watch = 0;
+                link.privacy = body.privacy ? body.privacy : 'public';
                 console.log(link);
                 await link.save();
                 res.status(200).send({ link });
@@ -109,9 +112,12 @@ class LinkController {
             return res.status(400).send({ error: "Data not formatted properly" });
         }
         try {
-            const links = await Link.findOne({ short_link: shortLink });
+            let links = await Link.findOne({ short_link: shortLink });
             if (!links) {
-                return res.status(400).send({ error: "Link not found" });
+                links = await Link.findOne({ _id: shortLink });
+                if (!links) {
+                    return res.status(400).send({ error: "Link not found" });
+                }
             }
             if (links.password != '') {
                 links.password = true;
@@ -119,30 +125,40 @@ class LinkController {
                 res.status(200).send({ data });
             } else {
                 links.password = false;
-                const { _id, __v, ...data } = links._doc;
-                res.status(200).send({ data });
+                if (links.privacy == 'private') {
+                    const authHeader = req.headers['authorization'];
+                    const token = authHeader && authHeader.split(' ')[1];
+                    if (token == null) {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                    const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+                    const user = await User.findOne({ _id: verified._id });
+                    if (!user) {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                    if (user._id.equals(mongoose.Types.ObjectId(links.user_id))) {
+                        const { _id, __v, ...data } = links._doc;
+                        res.status(200).send({ data });
+                    } else {
+                        return res.status(400).send({ error: "Link not found" });
+                    }
+                }else{
+                    const { _id, __v, ...data } = links._doc;
+                    res.status(200).send({ data });
+                }
             }
-        } catch (error) {
-            console.error(error);
-            res.status(400).send({ error });
+        } catch (err) {
+            console.error(err);
+            res.status(400).send({ error: "Link not found" });
         }
     }
 
     // [POST] get/:shortLink
     async showDetails(req, res) {
         console.log("call show details");
-        if (req.header('authorization')) {
-            const authHeader = req.headers['authorization']
-            const token = authHeader && authHeader.split(' ')[1]
-            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
-            const user = await User.findOne({ _id: verified._id });
-            if (!user) {
-                return res.status(400).send({ error: "User not found" });
-            }
-        }
         const shortLink = req.params.shortLink;
         const body = req.body;
-        console.log("body: ", body);
+        // console.log("body: ", body);
         if (!(shortLink && body.password)) {
             return res.status(400).send({ error: "Data not formatted properly" });
         }
@@ -170,16 +186,29 @@ class LinkController {
         try {
             const authHeader = req.headers['authorization']
             const token = authHeader && authHeader.split(' ')[1]
+            const page = req.query.page || 1;
+            const perPage = 10;
+            let pages = 0;
+            let total = 0;
             const verified = jwt.verify(token, process.env.TOKEN_SECRET);
             const user = await User.findOne({ _id: verified._id });
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
             }
-            const data = await Link.find({ user_id: user._id });
+            const sort = { createdAt: -1 };
+            const data = await Link
+                .find({ user_id: user._id }, { __v: 0, user_id: 0 })
+                .limit(perPage)
+                .skip(perPage * page - perPage)
+                .sort(sort);
+
+            total = await Link.countDocuments({ user_id: user._id });
+            pages = Math.ceil(total / perPage);
+
             if (!data) {
                 return res.status(400).send({ error: "Link not found" });
             }
-            res.status(200).send({ data });
+            res.status(200).send({ data, 'current': page, pages, total });
         } catch (error) {
             console.error(error);
             res.status(400).send({ error });
@@ -232,12 +261,23 @@ class LinkController {
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
             }
-            const isset = await this.checkShortLink(body.short_link).then((isset) => {
-                if (isset) {
-                    return true;
+            const currentLink = Link.findOne({ short_link: shortLink });
+            let isset = true;
+            if (!currentLink) {
+                return res.status(400).send({ error: "Link not found" });
+            } else {
+                if (currentLink.short_link != body.short_link) {
+                    isset = false;
+                } else {
+                    isset = await this.checkShortLink(body.short_link).then((isset) => {
+                        if (isset) {
+                            return true;
+                        }
+                        return false;
+                    });
                 }
-                return false;
-            });
+
+            }
             if (isset) {
                 return res.status(400).send({ error: "Short link already exists" });
             } else {
@@ -272,27 +312,52 @@ class LinkController {
             const user = await User.findOne({ _id: verified._id });
             if (!user) {
                 return res.status(400).send({ error: "User not found" });
-            }else{
+            } else {
                 try {
                     const links = await Link.findOne({ short_link: shortLink });
                     if (!links) {
                         return res.status(400).send({ error: "Link not found" });
                     }
-                    if(links.user_id.equals(user._id) === false){
+                    if (links.user_id.equals(user._id) === false) {
                         return res.status(400).send({ error: "You don't have permission to delete this link" });
-                    }else{
+                    } else {
                         await Link.deleteOne({ short_link: shortLink });
                         res.status(200).send({ message: "Delete successfully" });
-                    }   ;
+                    };
                 } catch (error) {
                     console.error(error);
                     res.status(400).send({ error });
                 }
             }
-        }else{
+        } else {
             return res.status(400).send({ error: "authorization not found" });
         }
-        
+
+    }
+
+    // [GET] /overview
+    async overview(req, res) {
+        console.log("call overview");
+        try {
+            const authHeader = req.headers['authorization']
+            const token = authHeader && authHeader.split(' ')[1]
+            const verified = jwt.verify(token, process.env.TOKEN_SECRET);
+            const user = await User.findOne({ _id: verified._id });
+            if (!user) {
+                return res.status(400).send({ error: "User not found" });
+            }
+            const data = {};
+            const numberLinks = await Link.count();
+            const numberUser = await User.count();
+            const numberLinkOfUser = await Link.count({ user_id: user._id });
+            data.numberLinks = numberLinks;
+            data.numberUser = numberUser;
+            data.numberLinkOfUser = numberLinkOfUser;
+            res.status(200).send({ data });
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
     }
 }
 

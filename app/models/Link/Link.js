@@ -8,7 +8,8 @@ const LinkSchema = new Schema({
     user_id: { type: Schema.Types.ObjectId, ref: 'User' },
     privacy: { type: String, default: 'public' }, // public, private
     watch: { type: Number, default: 0 }, // watches
-    password: { type: String, default: '' }
+    password: { type: String, default: '' },
+    auto_redirect: { type: Boolean, default: false },
 }, {
     timestamps: true,
 });

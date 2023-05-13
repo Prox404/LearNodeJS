@@ -94,7 +94,9 @@ class LinkController {
                 link.password = body.password ? body.password : '';
                 link.watch = 0;
                 link.privacy = body.privacy ? body.privacy : 'public';
-                link.auto_redirect = body.auto_redirect ? body.auto_redirect : false;
+                if (!body.password) {
+                    link.auto_redirect = body.auto_redirect ? body.auto_redirect : false;
+                }
                 console.log(link);
                 await link.save();
                 res.status(200).send({ link });

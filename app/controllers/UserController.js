@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 
 const User = require('../models/User/User');
 const Link = require('../models/Link/Link');
+const UserToken = require('../models/UserToken/UserToken');
 const jwt = require('jsonwebtoken');
 
 class UserController {
@@ -16,15 +17,17 @@ class UserController {
         try {
             const user = await User.findOne({ email: body.email });
             if (!user) {
-                return res.status(400).send({ error: "User not found" });
+                return res.status(401).send({ error: "User not found" });
             }
             const validPassword = await bcrypt.compare(body.password, user.password);
             if (!validPassword) {
-                return res.status(400).send({ error: "Password is not correct" });
+                return res.status(401).send({ error: "Password is not correct" });
             }
-            const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 * 365 });
+            const accessToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 });
+            const refreshToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 * 365 });
+            await new UserToken({ userId: user._id, token: refreshToken }).save();
             const { password, role, ...data } = user._doc;
-            res.status(200).send({ data, token });
+            res.status(200).send({ data, accessToken, refreshToken });
         } catch (error) {
             console.error(error);
             res.status(400).send({ error });
@@ -45,6 +48,39 @@ class UserController {
             const { password, role, __v, ...data } = user._doc;
             res.status(200).send({ data });
         } catch (error) {
+            res.status(400).send({ error });
+        }
+    }
+
+    // [POST] /refresh-token
+    async refreshToken(req, res) {
+        const refreshToken = req.body.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).send({ error: "You are not authenticated" });
+        }
+        try {
+            const user = jwt.verify(refreshToken, process.env.TOKEN_SECRET);
+            const accessToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 });
+            res.status(200).send({ accessToken });
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error });
+        }
+    }
+
+    // [POST] /logout
+    async logout(req, res) {
+        const refreshToken = req.body.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).send({ error: "You are not authenticated" });
+        }
+        try {
+            const user = jwt.verify(refreshToken, process.env.TOKEN_SECRET);
+            const accessToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 });
+            await UserToken.deleteOne({ userId: user._id, token: refreshToken });
+            res.status(200).send({ accessToken });
+        } catch (error) {
+            console.error(error);
             res.status(400).send({ error });
         }
     }

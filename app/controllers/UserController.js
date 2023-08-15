@@ -143,9 +143,10 @@ class UserController {
             if (newUser) {
                 console.log("User already exists");
                 console.log(newUser);
-                const token = jwt.sign({_id: newUser._id}, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 * 365 }); 
+                const accessToken = jwt.sign({ _id: newUser._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 });
+                const refreshToken = jwt.sign({ _id: newUser._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 * 365 });
                 const {password, role, ...data} = newUser._doc;
-                res.status(200).send({ data, token });
+                res.status(200).send({ data, accessToken, refreshToken });
             }else{
                 console.log("Create new user");
                 const user = new User({
@@ -158,9 +159,10 @@ class UserController {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);
                 await user.save();
-                const token = jwt.sign({_id: user._id}, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 });
-                const {password, role, __v, ...data} = user._doc;
-                res.status(200).send({ data, token });
+                const accessToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 });
+                const refreshToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: 60 * 60 * 24 * 365 });
+                const {password, role, ...data} = user._doc;
+                res.status(200).send({ data, accessToken, refreshToken });
             }
         } catch (error) {
             res.status(400).send({ error });

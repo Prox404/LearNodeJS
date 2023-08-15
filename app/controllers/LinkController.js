@@ -287,7 +287,8 @@ class LinkController {
                 const link = await Link.findOneAndUpdate({ short_link: shortLink }, {
                     link: body.link,
                     short_link: body.short_link,
-                    password: body.password ? body.password : ''
+                    password: body.password ? body.password : '',
+                    privacy: body.privacy ? body.privacy : 'public',
                 }, { new: true });
                 if (!link) {
                     return res.status(400).send({ error: "Link not found" });
@@ -344,6 +345,7 @@ class LinkController {
         try {
             const authHeader = req.headers['authorization']
             const token = authHeader && authHeader.split(' ')[1]
+            console.log(authHeader);
             const verified = jwt.verify(token, process.env.TOKEN_SECRET);
             const user = await User.findOne({ _id: verified._id });
             if (!user) {
